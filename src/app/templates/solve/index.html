@@ -1,0 +1,248 @@
+{% extends "layout.html" %}
+{% block title %}イジングマシンを用いたクラス分けツールによる教員の負担削減{% endblock %}
+
+{% block stylesheet %}
+{{ super() }}
+<script>
+    // ここのJava Scriptのコードは
+    // こちら↓を参考にさせていただいています
+    // http://blog.chatlune.jp/2018/02/01/canvas-radar-chart/
+    // https://github.com/ChatLune/blog-javascript-canvasChart
+
+    window.onload = function() {
+        setOnChange();
+        chartbuild();
+    };
+
+    function chartbuild() {
+        var canvas = document.getElementById('chart');
+        if (canvas.getContext) {
+            var context = canvas.getContext('2d');
+
+            //チャートの基本変数定義
+            var center_x = 250;          //中心x座標
+            var center_y = 200;          //中心y座標
+            var vertex = 5;              //頂点の数
+            var size = 150;              //大きさ（外周円の半径）
+            var tilt = 180;             //傾き
+            var scale = 5;               //目盛の数
+            var line_color = "#a9a9a9";  //プロット表のライン色
+            var line_width = 2;          //プロット表のラインの太さ
+            var line_width_out = 4;      //プロット表のラインの太さ（一番外側）
+            var line_width_center = 1;   //プロット表の中心線の太さ
+
+            reset();
+
+            function reset() {
+                context.clearRect(0,0,canvas.width,canvas.height);
+                makechartframe();
+                makecenterline();
+                writeline();
+                writelabel();
+            }
+
+            function writeline(){
+                var x;
+                var y;
+                var start_x;
+                var start_y;
+                var csize;
+                var angle;
+                var rad;
+                let k = {{ score| tojson }};
+                context.strokeStyle = "#e33517";
+                context.beginPath();
+                context.lineWidth = line_width;
+
+                for (var l=0;l<vertex;l++) {
+                        csize = size / scale * k[l];
+                        angle = tilt + 360 / vertex * l;
+                        rad = angle * Math.PI / 180;
+
+                        x = center_x + Math.sin(rad) * csize;
+                        y = center_y + Math.cos(rad) * csize;
+
+                        if (l == 0) {
+                            context.moveTo(x,y);
+                            start_x = x;
+                            start_y = y;
+                        } else {
+                            context.lineTo(x,y);
+                        }
+                }
+
+                context.lineTo(start_x,start_y);
+                context.stroke();
+            }
+
+            //チャートの枠と目盛ラインを描画
+            function makechartframe(){
+
+                var x;
+                var y;
+                var start_x;
+                var start_y;
+                var csize;
+                var angle;
+                var rad;
+                context.strokeStyle = line_color;
+                for (var k=scale;k>=0;k--) {
+                    csize = size / scale * k;
+                    context.beginPath();
+                    if (k == scale) {
+                        context.lineWidth = line_width_out;
+                    } else {
+                        context.lineWidth = line_width;
+                    }
+
+                    for (var l=0;l<vertex;l++) {
+
+                        angle = tilt + 360 / vertex * l;
+                        rad = angle * Math.PI / 180;
+
+                        x = center_x + Math.sin(rad) * csize;
+                        y = center_y + Math.cos(rad) * csize;
+
+                        if (l == 0) {
+                            context.moveTo(x,y);
+                            start_x = x;
+                            start_y = y;
+                        } else {
+                            context.lineTo(x,y);
+                        }
+
+                    }
+                    context.lineTo(start_x,start_y);
+                    context.stroke();
+                }
+            }
+
+            //チャートの中心線を描画
+            function makecenterline() {
+
+                var x;
+                var y;
+                var angle;
+                var rad;
+                context.strokeStyle = line_color;
+                context.lineWidth = line_width_center;
+                for (var m=0;m<vertex;m++) {
+                    angle = tilt + 360 / vertex * m;
+                    rad = angle * Math.PI / 180;
+
+                    x = center_x + Math.sin(rad) * size;
+                    y = center_y + Math.cos(rad) * size;
+
+                    context.beginPath();
+                    context.moveTo(center_x,center_y);
+                    context.lineTo(x,y);
+                    context.stroke();
+                }
+            }
+
+
+            function writelabel(){
+                labels = ["人数均等度","性別均等度","学力均等度","地域均等度","児童間の相性"];
+                offset_x = [-60,-100,-55,-55,-10];
+                offset_y = [-10,-20,40,40,-20];
+
+                context.font = "24px serif";
+                for(var i=0; i<scale; ++i){
+                    angle = tilt + 360 / vertex * i;
+                    rad = angle * Math.PI / 180;
+                    x = center_x + Math.sin(rad) * size + offset_x[i];
+                    y = center_y + Math.cos(rad) * size + offset_y[i];
+                    context.fillText(labels[i], x, y);
+                }
+            }
+        }
+    }
+
+    function setOnChange() {
+        var inputElements = document.getElementsByTagName('input'),
+            i, len = inputElements.length;
+
+        for (i=0; i<len; ++i) {
+            inputElements[i].onkeyup = inputElements[i].onchange = chartbuild;
+        }
+    }
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-3 mb-3">
+    <h3>イジングマシンを用いたクラス分けツールによる教員の負担削減</h3>
+</div>
+
+<div class="container mt-3 mb-3">
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-8 col-xl-6">
+            <div class="text-center">
+                <canvas id="chart" height="400" width="600"></canvas>
+            </div>
+            <div class="text-center row">
+                <div class="col-auto">
+                    <form action="{{url_for('download.download_view')}}" method="POST">
+                        <button type="submit" class="btn btn-secondary">CSVでダウンロード</button>
+                        {% for r in result %}
+                        <input type="hidden" name="class{{loop.index0}}" value="{{r}}">
+                        {% endfor %}
+                        {% include "misc/students.html" %}
+                    </form>
+                </div>
+                <div class="col-auto">
+                    <form action="{{url_for('solve.solve_view')}}" method="POST">
+                        <button type="submit" class="btn btn-secondary">別のクラス分けを生成</button>
+                        <input type="hidden" name="num_class" value="{{num_class}}">
+                        {% include "misc/students.html" %}
+                    </form>
+                </div>
+                <div class="col-auto">
+                    <form action="{{url_for('index')}}" method="POST">
+                        <button type="submit" class="btn btn-danger">戻る</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">氏名</th>
+            <th scope="col">性別</th>
+            <th scope="col">学力</th>
+            <th scope="col">居住地</th>
+            <th scope="col">相性の悪い児童</th>
+            <th scope="col">割当クラス</th>
+        </tr>
+    </thead>
+    <tbody>
+{% if students is not defined or students|length == 0 %}
+        <tr>
+            <th scope="row"></th>
+            <td colspan="5">リストは空です</td>
+        </tr>
+{% else %}
+    {% for s in students %}
+        <tr>
+            <th scope="row">{{loop.index}}</th>
+            <td>{{s.name}}</td>
+            <td>{{s.gender}}</td>
+            <td>{{s.grade}}</td>
+            <td>{{s.region}}</td>
+            <td>{{s.dislikeA}}{{(", "+s.dislikeB) if s.dislikeB != ""}}{{(", "+s.dislikeC) if s.dislikeC != ""}}</td>
+            <td>{{result[loop.index0]}}</td>
+        </tr>
+    {% endfor %}
+{% endif %}
+    </tbody>
+</table>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

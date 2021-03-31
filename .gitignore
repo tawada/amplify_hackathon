@@ -1,0 +1,18 @@
+src/Pipfile*
+*.swap
+__pycache__/
+ignore/
+
+# OSX
+.DS_Store
+__MACOSX
+thumbs.db
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

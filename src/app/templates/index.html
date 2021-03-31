@@ -1,0 +1,215 @@
+{% extends "layout.html" %}
+{% block title %}イジングマシンを用いたクラス分けツールによる教員の負担削減{% endblock %}
+
+{% block content %}
+<div class="container mt-3 mb-3">
+    <h3>イジングマシンを用いたクラス分けツールによる教員の負担削減</h3>
+</div>
+
+{# flaskのメッセージを表示 #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<div class="container mt-3 mb-3">
+    {% if category == 'success' %}
+    <div class="alert alert-success" role="alert">
+            {{ message }}
+    </div>
+    {% elif category == 'failed' %}
+    <div class="alert alert-danger" role="alert">
+            {{ message }}
+    </div>
+    {% endif %}
+</div>
+    {% endfor %}
+{% if not messages %}
+<div class="container mt-3 mb-3">
+    <div class="card">
+        <div class="card-body">
+<p>小学校教員向けにクラス分けの案を自動作成します。</p>
+<p>クラス分けでは以下の要因を考慮します。</p>
+<ul>
+    <li>各クラスの人数と男女比が揃っていること</li>
+    <li>学力に差がでないようにすること</li>
+    <li>居住地を揃える/揃えないこと</li>
+    <li>児童同士の相性を考慮すること</li>
+</ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="container mt-3 mb-3">
+    <div class="card">
+        <div class="card-header">
+            児童リスト
+        </div>
+        <div class="card-body overflow-auto" style="height:150pt">
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">氏名</th>
+            <th scope="col">性別</th>
+            <th scope="col">学力</th>
+            <th scope="col">居住地</th>
+            <th scope="col">相性の悪い児童</th>
+        </tr>
+    </thead>
+    <tbody>
+{% if students is not defined or students|length == 0 %}
+        <tr>
+            <th scope="row"></th>
+            <td colspan="5">リストは空です</td>
+        </tr>
+{% else %}
+    {% for s in students %}
+        <tr>
+            <th scope="row">{{loop.index}}</th>
+            <td>{{s.name}}</td>
+            <td>{{"男子" if s.gender == "M" else "女子"}}</td>
+            <td>{{s.grade}}</td>
+            <td>{{s.region}}</td>
+            <td>{{s.dislikeA}}{{(", "+s.dislikeB) if s.dislikeB != ""}}{{(", "+s.dislikeC) if s.dislikeC != ""}}</td>
+        </tr>
+    {% endfor %}
+{% endif %}
+    </tbody>
+</table>
+
+        </div>
+        <div class="card-footer">
+            <div class="row">
+                <div class="col-auto">
+<form action="{{url_for('solve.solve_view')}}", method="POST">
+    <p><input type="text" name="num_class" value="3">クラスで
+    <button type="submit" class="btn btn-secondary">クラス分けを生成 &#187;</button></p>
+    {% include "misc/students.html" %}
+</form>
+                </div>
+                <div class="col-auto">
+<form action="{{url_for('index')}}" method="post">
+    <button type="submit" class="btn btn-danger">リストをリセット</button>
+</form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-3 mb-3">
+    <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    ランダムにまとめて追加
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <form action="{{url_for('add.add_random_view')}}" method="POST">
+                        <p>ランダムに<input type="text" name="num_add_random" value="10">人</p>
+                        <button type="submit" class="btn btn-secondary">リストに追加</button>
+                        {% include "misc/students.html" %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTwo">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    1人ずつ追加
+                </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+
+        <form action="{{url_for('add.add_one_view')}}" method="POST">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="nameX">氏名</span>
+                </div>
+                <input type="text" class="form-control" name="nameX" placeholder="Name"
+                    aria-label="Name" aria-describedby="nameX">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="genderX">性別</span>
+                </div>
+                <select class="form-control" name="genderX"
+                    aria-label="Gender" aria-describedby="genderX">
+                    <option value="男子">男子</option> {# male/female とか 0/1 にする？ #}
+                    <option value="女子">女子</option>
+                </select>
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="gradeX">学力</span>
+                </div>
+                <input type="text" class="form-control" name="gradeX" placeholder="Grade: 0~100"
+                    aria-label="Grade" aria-describedby="gradeX">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="regionX">居住地域</span>
+                </div>
+                <select class="form-control" name="regionX"
+                    aria-label="Home" aria-describedby="text1c">
+                    <option value="地域1">地域1</option>
+                    <option value="地域2">地域2</option>
+                    <option value="地域3">地域3</option>
+                    <option value="地域4">地域4</option>
+                    <option value="地域5">地域5</option>
+                    <option value="地域6">地域6</option>
+                </select>
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="dislikeAX">相性の悪い児童1</span>
+                </div>
+                <input type="text" class="form-control" name="dislikeAX" placeholder=""
+                    aria-label="Name2" aria-describedby="dislikeAX">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="dislikeBX">相性の悪い児童2</span>
+                </div>
+                <input type="text" class="form-control" name="dislikeBX" placeholder=""
+                    aria-label="Name3" aria-describedby="dislikeBX">
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="dislikeCX">相性の悪い児童3</span>
+                </div>
+                <input type="text" class="form-control" name="dislikeCX" placeholder=""
+                    aria-label="Name4" aria-describedby="dislikeCX">
+            </div>
+            <button type="submit" class="btn btn-secondary">リストに追加</button>
+            {% include "misc/students.html" %}
+        </form>
+
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingThree">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    ファイルから追加
+                </button>
+            </h2>
+            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <form action="{{url_for('add.add_file_view')}}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3"><input class="form-control" type="file" id="formFile" name="file"></div>
+                        <button type="submit" class="btn btn-secondary">リストに追加</button>
+                        {% include "misc/students.html" %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,9 @@
+{% for s in students %}
+<input type="hidden" name="name{{loop.index0}}" value="{{s.name}}">
+<input type="hidden" name="gender{{loop.index0}}" value="{{s.gender}}">
+<input type="hidden" name="grade{{loop.index0}}" value="{{s.grade}}">
+<input type="hidden" name="region{{loop.index0}}" value="{{s.region}}">
+<input type="hidden" name="dislikeA{{loop.index0}}" value="{{s.dislikeA}}">
+<input type="hidden" name="dislikeB{{loop.index0}}" value="{{s.dislikeB}}">
+<input type="hidden" name="dislikeC{{loop.index0}}" value="{{s.dislikeC}}">
+{% endfor %}
